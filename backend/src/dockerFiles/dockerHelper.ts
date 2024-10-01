@@ -6,7 +6,8 @@ const docker = new Docker()
 export async function runContainer ()
 {
     try {
-        const scriptPath = "/home/harsh/Documents/PyCpp/web/inter/FlowCode/backend/src/script.py";
+        const scriptPath =
+            '/home/harsh/Documents/PyCpp/web/inter/flowcode/backend/src/script.py';
         const container = docker.createContainer({
             Image: 'python:3.9',
             Cmd: ['python', '/app/script.py'],

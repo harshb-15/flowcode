@@ -17,7 +17,7 @@ app.post('/code-run', (req: Request, res: Response) => {
     console.log('received');
     setCodeToFile(
         data.message,
-        '/home/harsh/Documents/PyCpp/web/inter/FlowCode/backend/src/script.py'
+        '/home/harsh/Documents/PyCpp/web/inter/flowcode/backend/src/script.py'
     );
     runContainer()
     res.send({ message: req.body.message });
