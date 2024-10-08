@@ -1,7 +1,8 @@
 import express, { Express, Request, Response } from 'express';
 import dotenv from 'dotenv';
 import fs from 'fs';
-import { runContainer } from './dockerFiles/dockerHelper';
+import { createNewContainer, editFileInContainer, getContainerFromId, runFileInContainer } from './dockerFiles/dockerHelper';
+import { Container } from 'dockerode';
 dotenv.config();
 
 const app: Express = express();
@@ -12,16 +13,22 @@ app.get('/', (req: Request, res: Response) => {
     res.send('Express + TypeScript Server');
 });
 
-app.post('/code-run', (req: Request, res: Response) => {
-    var data: { message: any } = req.body;
-    console.log('received');
-    setCodeToFile(
-        data.message,
-        '/home/harsh/Documents/PyCpp/web/inter/flowcode/backend/src/script.py'
-    );
-    runContainer()
-    res.send({ message: req.body.message });
-});
+app.get('/create-room', async (req: Request, res: Response) =>
+{
+    console.log("creating room")
+    const container = await createNewContainer();
+    res.json({ containerId: container.id });
+})
+
+app.post('/run-code/:containerId', async (req: Request, res: Response) =>
+{
+    const containerId: string = req.params.containerId;
+    const fileData: string = req.body.message;
+    const container: Container = getContainerFromId(containerId);
+    await editFileInContainer(container, fileData);
+    const output = await runFileInContainer(container);
+    res.json({ output });
+})
 
 app.listen(port, () => {
     console.log(`[server]: Server is at http://localhost:${port}`);
