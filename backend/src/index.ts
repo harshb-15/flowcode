@@ -15,9 +15,8 @@ app.get('/', (req: Request, res: Response) => {
 
 app.get('/create-room', async (req: Request, res: Response) =>
 {
-    console.log("creating room")
     const container = await createNewContainer();
-    res.json({ containerId: container.id });
+    res.json({ containerId: container.id.substring(0,12) });
 })
 
 app.post('/run-code/:containerId', async (req: Request, res: Response) =>
@@ -33,13 +32,3 @@ app.post('/run-code/:containerId', async (req: Request, res: Response) =>
 app.listen(port, () => {
     console.log(`[server]: Server is at http://localhost:${port}`);
 });
-
-function setCodeToFile(code: string, filePath: string) {
-    fs.writeFile(filePath, code, (err) => {
-        if (err) {
-            console.log(err.message);
-            return;
-        }
-        console.log('File Written');
-    });
-}
