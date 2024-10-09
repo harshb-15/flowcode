@@ -1,11 +1,17 @@
 'use client';
 import { Editor, OnMount } from '@monaco-editor/react';
-import { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 export default function RenderRoom({
     params,
 }: {
     params: { roomcode: string };
-}) {
+    })
+{
+    const [fileData, setFileData] = useState<string>();
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<any>(null);
+    const nextRouter = useRouter();
     const editorRef = useRef<any>(null);
     const [codeOutput, setCodeOutput] = useState('');
     const handleEditorDidMount: OnMount = (editor) => {
@@ -14,12 +20,11 @@ export default function RenderRoom({
     const getCode = () => {
         if (editorRef.current) {
             const code: string = editorRef.current.getValue();
-            console.log(code);
-            return code; // You can perform any action with the code here
+            return code; 
         }
         return undefined;
     };
-    const fetchData = async () => {
+    const runCode = async () => {
         try {
             var myHeaders = new Headers();
             myHeaders.append('Content-Type', 'application/json');
@@ -48,11 +53,31 @@ export default function RenderRoom({
             console.log(err);
         }
     };
+    const fetchFileData = async () => {
+        try {
+            const response = await fetch(`http://127.0.0.1:3001/get-file-data/${params.roomcode}`);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const result: string = (await response.json()).fileData;
+            setFileData(result);
+            
+        } catch (err) {
+            setError(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+    useEffect(() => {
+        fetchFileData();
+    }, []);
+    if (loading) return <div>Fetching room details...</div>;
+    if (error) return <div>Error: {error.message}</div>;
     return (
         <div>
             <button
                 onClick={() => {
-                    fetchData();
+                    runCode();
                 }}
             >
                 Run
@@ -60,7 +85,7 @@ export default function RenderRoom({
             <Editor
                 height="80vh"
                 defaultLanguage="python"
-                defaultValue="print('hellooooworldd')"
+                defaultValue={fileData}
                 theme="vs-dark"
                 onMount={handleEditorDidMount}
             />

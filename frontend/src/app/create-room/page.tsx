@@ -1,12 +1,12 @@
-'use client'
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-type CreateRoomData = {
-    containerId: string
-}
+'use client';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
-export default function CreateRoom()
-{
+type CreateRoomData = {
+    containerId: string;
+};
+
+export default function CreateRoom() {
     const [data, setData] = useState<CreateRoomData>();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<any>(null);
@@ -21,7 +21,7 @@ export default function CreateRoom()
             const result: CreateRoomData = await response.json();
             setData(result);
             setTimeout(() => {
-                nextRouter.replace(`/room/${result.containerId}`); 
+                nextRouter.replace(`/room/${result.containerId}`);
             }, 3000);
         } catch (err) {
             setError(err);
@@ -30,9 +30,7 @@ export default function CreateRoom()
         }
     };
 
-
-    useEffect(() =>
-    {
+    useEffect(() => {
         fetchData();
     }, []);
 

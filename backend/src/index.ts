@@ -1,7 +1,6 @@
 import express, { Express, Request, Response } from 'express';
 import dotenv from 'dotenv';
-import fs from 'fs';
-import { createNewContainer, editFileInContainer, getContainerFromId, runFileInContainer } from './dockerFiles/dockerHelper';
+import { createNewContainer, editFileInContainer, getContainerFromId, getFileDataFromContainer, runFileInContainer } from './dockerFiles/dockerHelper';
 import { Container } from 'dockerode';
 dotenv.config();
 
@@ -27,6 +26,14 @@ app.post('/run-code/:containerId', async (req: Request, res: Response) =>
     await editFileInContainer(container, fileData);
     const output = await runFileInContainer(container);
     res.json({ output });
+})
+
+app.get('/get-file-data/:containerId', async (req: Request, res: Response) =>
+{
+    const containerId: string = req.params.containerId;
+    const container: Container = getContainerFromId(containerId);
+    const fileData: string = await getFileDataFromContainer(container);
+    res.json({ fileData });
 })
 
 app.listen(port, () => {

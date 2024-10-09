@@ -1,4 +1,4 @@
-import Docker from 'dockerode';
+import Docker, { Container } from 'dockerode';
 
 // Constants
 const docker = new Docker();
@@ -84,6 +84,35 @@ export async function runFileInContainer(container: Docker.Container)
         return output;
     } catch (err) {
         throw new Error("Error Running File In Container: \n" + err.message);
+    }
+}
+
+export async function getFileDataFromContainer(container: Container) {
+    try {
+        // Use exec to run a command that reads the file
+        await container.start()
+        const exec = await container.exec({
+            AttachStdout: true,
+            AttachStderr: true,
+            Cmd: ['cat', '/app/script.py'], // Command to read the file
+        });
+
+        const stream = await exec.start({ Detach: false, Tty: false });
+        let output = '';
+
+        // Collect data from stdout
+        stream.on('data', (chunk) => {
+            output += chunk.toString();
+        });
+
+        // Wait for the stream to end
+        await new Promise((resolve) => stream.on('end', resolve));
+        await container.stop();
+        output = output.trim(); // Remove leading/trailing whitespace
+        output = output.replace(/[^\x20-\x7E\n]/g, '');
+        return output.substring(1); // Return the fetched output
+    } catch (error) {
+        console.error('Error fetching file:', error);
     }
 }
 
