@@ -85,7 +85,7 @@ export default function RenderRoom({
             <Editor
                 height="80vh"
                 defaultLanguage="python"
-                defaultValue={fileData}
+                value={fileData}
                 theme="vs-dark"
                 onMount={handleEditorDidMount}
             />

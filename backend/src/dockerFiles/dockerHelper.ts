@@ -1,8 +1,8 @@
 import Docker, { Container } from 'dockerode';
-
+import fs from 'fs';
 // Constants
 const docker = new Docker();
-const defaultScriptPath: string = '/app/script.py';
+const defaultScriptPath: string = '/home/script.py';
 const defaultStarterPath = {
     python: '/home/harsh/Documents/PyCpp/web/inter/flowcode/backend/src/script.py',
 };
@@ -10,17 +10,42 @@ const defaultContainerOptions: Docker.ContainerCreateOptions = {
     Image: 'python:3.9',
     Cmd: ['tail', '-f', '/dev/null'],
     Tty: true,
-    HostConfig: {
-        Binds: [`${defaultStarterPath.python}:${defaultScriptPath}`],
-    },
+    // HostConfig: {
+    //     Binds: [`${defaultStarterPath.python}:${defaultScriptPath}`],
+    // },
 };
-
 // Helper Functions
-export function createNewContainer(
+export async function createNewContainer(
     containerOptions: Docker.ContainerCreateOptions = defaultContainerOptions
 ) {
     try {
-        const container = docker.createContainer(containerOptions);
+        const container = await docker.createContainer(containerOptions);
+        let defData = ""
+        fs.readFile(defaultStarterPath.python, 'utf-8', (err, data) => { defData = data; })
+        await container.start();
+
+        // Step 3: Create a command to add the file to the container
+        const exec = await container.exec({
+            AttachStdout: true,
+            AttachStderr: true,
+            Cmd: [
+                'sh',
+                '-c',
+                `echo "${defData.replace(/"/g, '\\"')}" > ${defaultScriptPath}`,
+            ],
+        });
+
+        const stream = await exec.start({ Detach: false, Tty: false });
+
+        // Collect output (optional)
+        let output = '';
+        stream.on('data', (chunk) => {
+            output += chunk.toString();
+        });
+
+        // Wait for the stream to end
+        await new Promise((resolve) => stream.on('end', resolve));
+        await container.stop();
         return container;
     } catch (err) {
         throw new Error('Error While Creating a new Container: ' + err.message);
@@ -42,7 +67,7 @@ export async function editFileInContainer(container: Docker.Container, fileData:
         const command = [
             'sh',
             '-c',
-            `echo "${fileData.replace(/"/g, '\\"')}" > /app/script.py`,
+            `echo "${fileData.replace(/"/g, '\\"')}" > ${defaultScriptPath}`,
         ];
 
         // Execute the command inside the container to write the new data to the file
@@ -63,7 +88,7 @@ export async function runFileInContainer(container: Docker.Container)
 {
     try {
         await container.start();
-        const command = ['python', '/app/script.py'];
+        const command = ['python', defaultScriptPath];
 
         // Execute the command inside the container to write the new data to the file
         const idk = await container.exec({
@@ -94,7 +119,7 @@ export async function getFileDataFromContainer(container: Container) {
         const exec = await container.exec({
             AttachStdout: true,
             AttachStderr: true,
-            Cmd: ['cat', '/app/script.py'], // Command to read the file
+            Cmd: ['cat', defaultScriptPath], // Command to read the file
         });
 
         const stream = await exec.start({ Detach: false, Tty: false });
