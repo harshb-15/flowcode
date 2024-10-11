@@ -63,7 +63,6 @@ export function getContainerFromId(containerId: string) {
 export async function editFileInContainer(container: Docker.Container, fileData: string)
 {
     try {
-        await container.start();
         const command = [
             'sh',
             '-c',
@@ -77,7 +76,6 @@ export async function editFileInContainer(container: Docker.Container, fileData:
             AttachStderr: true,
         });
         await execEntity.start({ Detach: false, Tty: false });
-        await container.stop();
 
     } catch (err) {
         throw new Error("Error Editing File in container id: " + container.id + "\n" + err.message);
@@ -87,7 +85,6 @@ export async function editFileInContainer(container: Docker.Container, fileData:
 export async function runFileInContainer(container: Docker.Container)
 {
     try {
-        await container.start();
         const command = ['python', defaultScriptPath];
 
         // Execute the command inside the container to write the new data to the file
@@ -102,10 +99,7 @@ export async function runFileInContainer(container: Docker.Container)
             output += chunk.toString();
         });
         await new Promise((resolve) => stream.on('end', resolve));
-        await container.stop();
-        output = output.trim(); // Remove leading/trailing whitespace
-        output = output.replace(/[^\x20-\x7E\n]/g, '');
-        // output = output.replace(/\n/g, '<br>');
+        output = output.slice(8)
         return output;
     } catch (err) {
         throw new Error("Error Running File In Container: \n" + err.message);
@@ -133,11 +127,20 @@ export async function getFileDataFromContainer(container: Container) {
         // Wait for the stream to end
         await new Promise((resolve) => stream.on('end', resolve));
         await container.stop();
-        output = output.trim(); // Remove leading/trailing whitespace
-        output = output.replace(/[^\x20-\x7E\n]/g, '');
-        return output.substring(1); // Return the fetched output
+        output = output.slice(8);
+        return output; 
     } catch (error) {
         console.error('Error fetching file:', error);
+    }
+}
+
+export async function isContainerRunning(container: Docker.Container) {
+    try {
+        const data = await container.inspect();
+        return data.State.Running;
+    } catch (error) {
+        console.error('Error inspecting container:', error);
+        return false;
     }
 }
 
